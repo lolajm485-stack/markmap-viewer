@@ -1,116 +1,55 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Markdown 转思维导图</title>
-    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
-    <script src="https://cdn.jsdelivr.net/npm/markmap-view"></script>
-    <script src="https://cdn.jsdelivr.net/npm/markmap-lib"></script>
+    <title>思维导图在线生成</title>
+    <script src="https://cdn.staticfile.org/d3/7.8.5/d3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/markmap-view@0.15.4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/markmap-lib@0.15.4"></script>
     <style>
-        body {
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            font-family: sans-serif;
+        body, html, svg { margin: 0; width: 100%; height: 100%; background: #fdfdfd; font-family: sans-serif; }
+        .btn-group { position: fixed; bottom: 20px; right: 20px; display: flex; gap: 10px; }
+        button { 
+            padding: 10px 15px; background: #2ecc71; color: white; border: none; 
+            border-radius: 6px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-        header {
-            background: #2c3e50;
-            color: white;
-            padding: 10px 20px;
-            text-align: center;
-        }
-        .container {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-        }
-        #editor {
-            width: 30%;
-            height: 100%;
-            padding: 15px;
-            box-sizing: border-box;
-            border: none;
-            border-right: 1px solid #ccc;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 14px;
-            resize: none;
-            outline: none;
-        }
-        #mindmap-container {
-            flex: 1;
-            background: #f8f9fa;
-            position: relative;
-        }
-        svg#mindmap {
-            width: 100%;
-            height: 100%;
-        }
+        button:hover { background: #27ae60; }
     </style>
 </head>
 <body>
-
-<header>
-    <h1>Markdown 实时思维导图</h1>
-</header>
-
-<div class="container">
-    <textarea id="editor" placeholder="输入 Markdown 格式内容...
-# 中心主题
-## 分支1
-### 子分支A
-## 分支2"># Markdown 思维导图
-
-## 基础语法
-### 使用 # 表示层级
-### 支持列表项
-- 子项 1
-- 子项 2
-
-## 功能特性
-### 实时渲染
-### 鼠标滚动缩放
-### 拖拽移动
-
-## 使用场景
-### 读书笔记
-### 项目结构
-### 知识梳理</textarea>
-
-    <div id="mindmap-container">
-        <svg id="mindmap"></svg>
+    <svg id="markmap"></svg>
+    <div class="btn-group">
+        <button onclick="window.print()">保存为 PDF</button>
+        <button onclick="mm.fit()">自动居中</button>
     </div>
-</div>
+    <script>
+        let mm;
+        const renderMap = () => {
+            // 从 URL 的 # 后面获取数据
+            let encodedData = window.location.hash.substring(1);
+            if (!encodedData) return;
 
-<script>
-    const { Transformer } = window.markmap;
-    const { Markmap } = window.markmap;
+            try {
+                // Base64 解码，处理中文编码
+                const markdown = decodeURIComponent(escape(window.atob(encodedData)));
+                const { Transformer, Markmap } = window.markmap;
+                const transformer = new Transformer();
+                const { root } = transformer.transform(markdown);
+                const svg = document.querySelector('#markmap');
+                
+                // 清空旧内容并重新创建
+                svg.innerHTML = '';
+                mm = Markmap.create(svg, null, root);
+                mm.fit();
+            } catch (e) {
+                console.error("解析 Markdown 出错:", e);
+            }
+        };
 
-    const transformer = new Transformer();
-    const svg = document.querySelector('#mindmap');
-    const editor = document.querySelector('#editor');
-
-    // 创建 Markmap 实例
-    let mm = Markmap.create(svg);
-
-    // 渲染函数
-    function update() {
-        const markdown = editor.value;
-        const { root } = transformer.transform(markdown);
-        mm.setData(root);
-        mm.fit(); // 自动缩放以适应屏幕
-    }
-
-    // 监听输入事件
-    editor.addEventListener('input', update);
-
-    // 页面加载时执行一次
-    update();
-
-    // 窗口大小改变时自适应
-    window.addEventListener('resize', () => mm.fit());
-</script>
-
+        // 初始化渲染
+        window.onload = renderMap;
+        // 监听 URL 变化（方便调试）
+        window.onhashchange = renderMap;
+    </script>
 </body>
 </html>
