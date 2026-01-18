@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>思维导图在线生成</title>
+    <script src="https://cdn.staticfile.org/d3/7.8.5/d3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/markmap-view@0.15.4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/markmap-lib@0.15.4"></script>
+    <style>
+        body, html, svg { margin: 0; width: 100%; height: 100%; background: #fdfdfd; font-family: sans-serif; }
+        .btn-group { position: fixed; bottom: 20px; right: 20px; display: flex; gap: 10px; }
+        button { 
+            padding: 10px 15px; background: #2ecc71; color: white; border: none; 
+            border-radius: 6px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        button:hover { background: #27ae60; }
+    </style>
+</head>
+<body>
+    <svg id="markmap"></svg>
+    <div class="btn-group">
+        <button onclick="window.print()">保存为 PDF</button>
+        <button onclick="mm.fit()">自动居中</button>
+    </div>
+    <script>
+        let mm;
+        const renderMap = () => {
+            // 从 URL 的 # 后面获取数据
+            let encodedData = window.location.hash.substring(1);
+            if (!encodedData) return;
+
+            try {
+                // Base64 解码，处理中文编码
+                const markdown = decodeURIComponent(escape(window.atob(encodedData)));
+                const { Transformer, Markmap } = window.markmap;
+                const transformer = new Transformer();
+                const { root } = transformer.transform(markdown);
+                const svg = document.querySelector('#markmap');
+                
+                // 清空旧内容并重新创建
+                svg.innerHTML = '';
+                mm = Markmap.create(svg, null, root);
+                mm.fit();
+            } catch (e) {
+                console.error("解析 Markdown 出错:", e);
+            }
+        };
+
+        // 初始化渲染
+        window.onload = renderMap;
+        // 监听 URL 变化（方便调试）
+        window.onhashchange = renderMap;
+    </script>
+</body>
+</html>
